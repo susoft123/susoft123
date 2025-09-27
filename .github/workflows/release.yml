@@ -1,0 +1,63 @@
+name: restaurants-api-cd
+
+on:
+   pull_request:
+     branches: 
+     - master
+   workflow_dispatch:
+
+jobs:
+  build:
+     runs-on: ubuntu-latest
+     steps:
+       - name: Checkout
+         uses: actions/checkout@v5.0.0
+       - name: Setup .NET Core SDK
+         uses: actions/setup-dotnet@v5.0.0
+         with:
+          # Optional SDK version(s) to use. If not provided, will install global.json version when available. Examples: 2.2.104, 3.1, 3.1.x, 3.x, 6.0.2xx
+          dotnet-version: 8.0.x
+       - name: Restore dependencies 
+         run: dotnet restore
+       - name: Build 
+         run: dotnet build --no--restore
+       - name: Publish
+         run: dotnet publish ./src/Restaurants.API/Restaurants.API.csproj -o {{env.DOTNET_ROOT}}/api --no-build
+       - name: Upload a Build Artifact
+         uses: actions/upload-artifact@v4.6.2
+         with:
+           name: api-artifacten
+           path: ${{env.DOTNET_ROOT}}
+
+deploy-dev:
+  environment:
+    name: 'Dev'
+    Url: ${{steps.deploy-to-webapp.outputs.webapp-url}}
+  runs-on: ubuntu-latest
+  needs: buld
+  steps: 
+  - name: Download a Build Artifact
+  uses: actions/download-artifact@v5.0.0
+  with:
+    name: api-artifact
+- name: Azure WebApp
+  uses: Azure/webapps-deploy@v2.2.17
+  id: deploy-to-webapp
+  with:
+    app-name: 'asp-restaurants-dev1'
+    publish-profile: ${{secrets.PUBLISH_PROFILE_DEV}}
+
+    
+
+
+         
+      
+     
+  
+
+      
+      
+    
+      
+     
+    
